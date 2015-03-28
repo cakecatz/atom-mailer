@@ -1,0 +1,58 @@
+// The ui-variables file is provided by base themes provided by Atom.
+//
+// See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
+// for a full listing of what's available.
+@import "ui-variables";
+
+.atom-mailer {
+  display: flex;
+  color: @text-color;
+
+  li {
+    color: @text-color;
+  }
+
+  .message-list {
+    flex: 2.5;
+    background-color: @pane-item-background-color;
+    min-width: 240px;
+    max-width: 300px;
+
+    ul {
+      padding-left: 0px;
+    }
+
+    li {
+      margin-bottom: 0;
+      padding-left: 0;
+      list-style: none;
+      border-bottom: solid 1px @background-color-highlight;
+      > a {
+        display: block;
+        padding: 10px 15px;
+        text-decoration: none;
+      }
+
+      > a:hover {
+        background-color: @background-color-highlight;
+      }
+    }
+  }
+
+  .mail-content {
+    flex: 7.5;
+    height:100%;
+
+    .mail-body-container {
+      height: 100%;
+    }
+
+  }
+
+  .mail-body {
+    display: block;
+    border: none;
+    height: 100%;
+    width: 100%;
+  }
+}

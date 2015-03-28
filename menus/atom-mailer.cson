@@ -1,0 +1,22 @@
+# See https://atom.io/docs/latest/creating-a-package#menus for more details
+'context-menu':
+  'atom-text-editor': [
+    {
+      'label': 'Toggle atom-mailer'
+      'command': 'atom-mailer:toggle'
+    }
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'atom-mailer'
+      'submenu': [
+        {
+          'label': 'Toggle'
+          'command': 'atom-mailer:toggle'
+        }
+      ]
+    ]
+  }
+]
