@@ -67,34 +67,6 @@ module.exports = AtomMailer =
     @subscriptions.dispose()
     #@atomMailerView.destroy()
 
-  parseMailData: (mailDataString) ->
-    console.log 'hellooo'
-    mailData = {}
-    dataArr = mailDataString.split("\n")
-
-    indexKey = ''
-    for i in [0...dataArr.length]
-      if dataArr[i].indexOf(':') >= 0
-        s = dataArr[i].split(':')
-        indexKey = s[0].toLowerCase()
-
-        switch indexKey
-          when 'from', 'to'
-            mailData[ indexKey ] = s[1]
-          when 'subject'
-            mailData[ indexKey ] = @convertText s[1]
-      else
-        switch indexKey
-          when 'from', 'to'
-            mailData[ indexKey ] += dataArr[i]
-          when 'subject'
-            mailData[ indexKey ] += @convertText(dataArr[i])
-
-    mailData.from = @parseAddressData(mailData.from)
-    mailData.to   = @parseAddressData(mailData.to)
-
-    return mailData
-
   receiveMail: ->
     @imap.once 'ready', =>
       @openInbox (err, box) =>
@@ -144,27 +116,11 @@ module.exports = AtomMailer =
     @imap.openBox('INBOX', true, cb)
 
   jis2utf: (text)->
+    console.log 'jis2utf'
     buf = new Buffer(text)
     convertedBuf = jconv.convert buf, 'ISO-2022-JP', 'UTF-8'
     return convertedBuf.toString()
-
-  parseAddressData: (txt) ->
-    matched = txt.match(/([^<]*)(\<[^>]*\>)/)
-    if matched?
-      return name: @convertText(matched[1]), address: @trimSomeCharacter(matched[2])
-    else
-      if @checkEncoding(txt)
-        return name: @convertText(txt), address: ''
-      else
-        return name: '', address: @trimSomeCharacter(txt)
-
-  checkEncoding: (txt) ->
-    matched = txt.match(/\=\?([^\?]*)\?[A-Z]\?/)
-    if matched?
-      return matched[1]
-    else
-      return null
-
+    
   eventInit: ->
     callback = (event) =>
       #console.log @mailBox[$(this).attr('seqno')].body
@@ -173,6 +129,7 @@ module.exports = AtomMailer =
     @atomMailerView.on 'click', 'a', callback
 
   storeMessage: (seqno, data, type) ->
+    console.log 'storeMessage'
     @mailBox = {} if !@mailBox?
     if !@mailBox[seqno]?
       @mailBox[seqno] = {}
@@ -180,6 +137,7 @@ module.exports = AtomMailer =
     @mailBox[seqno][type] = data
 
   parseAttrs: ( attrs ) ->
+    console.log 'parseAttrs'
     res =
       part: false
       info: {}
@@ -205,6 +163,7 @@ module.exports = AtomMailer =
     return res
 
   prepareMessages: ->
+    console.log 'prepareMessages'
     Base64 = require('js-base64').Base64
     for key of @mailBox
       attrs = @parseAttrs(@mailBox[key].attrs)
@@ -230,17 +189,8 @@ module.exports = AtomMailer =
 
         @mailBox[key].body.push bodyData
 
-  trimSomeCharacter: (address) ->
-    address = address.trim()
-
-    re = /^\<(.*)\>$/
-
-    if address.match(re)
-      return address.match(re)[1]
-    else
-      return address
-
   ignoreContentInfo: (data) ->
+    console.log('ignoreContentInfo')
     if typeof data is 'string'
       return [data]
     newArr = []
