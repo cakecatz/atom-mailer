@@ -22,22 +22,25 @@ module.exports = AtomMailer =
     mailPassword:
       type: "string"
       default: "password"
-    Host:
+    host:
       type: "string"
       default: "imap.gmail.com"
-    Port:
+    port:
       type: "integer"
       default: 993
-    TlsEnable:
+    tlsEnable:
       type: "boolean"
       default: true
+    numberOfReceivingMail:
+      type: "integer"
+      default: 10
 
   initMailSettings: ->
     @mailAddress = atom.config.get('atom-mailer.mailAddress')
     @mailPassword = atom.config.get('atom-mailer.mailPassword')
-    @host = atom.config.get('atom-mailer.Host')
-    @port = atom.config.get('atom-mailer.Port')
-    @tlsEnable = atom.config.get('atom-mailer.TlsEnable')
+    @host = atom.config.get('atom-mailer.host')
+    @port = atom.config.get('atom-mailer.port')
+    @tlsEnable = atom.config.get('atom-mailer.tlsEnable')
 
     @imap = new Imap
       user: @mailAddress
@@ -67,11 +70,14 @@ module.exports = AtomMailer =
     @subscriptions.dispose()
     #@atomMailerView.destroy()
 
+  getNumberOfReceivingMail: ->
+    return '1:' + atom.config.get('atom-mailer.numberOfReceivingMail')
+
   receiveMail: ->
     @imap.once 'ready', =>
       @openInbox (err, box) =>
         throw err if err
-        f = @imap.seq.fetch '1:10',
+        f = @imap.seq.fetch @getNumberOfReceivingMail(),
           bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)','TEXT']
           struct: true
 
@@ -116,11 +122,10 @@ module.exports = AtomMailer =
     @imap.openBox('INBOX', true, cb)
 
   jis2utf: (text)->
-    console.log 'jis2utf'
     buf = new Buffer(text)
     convertedBuf = jconv.convert buf, 'ISO-2022-JP', 'UTF-8'
     return convertedBuf.toString()
-    
+
   eventInit: ->
     callback = (event) =>
       #console.log @mailBox[$(this).attr('seqno')].body
@@ -129,7 +134,6 @@ module.exports = AtomMailer =
     @atomMailerView.on 'click', 'a', callback
 
   storeMessage: (seqno, data, type) ->
-    console.log 'storeMessage'
     @mailBox = {} if !@mailBox?
     if !@mailBox[seqno]?
       @mailBox[seqno] = {}
@@ -137,7 +141,6 @@ module.exports = AtomMailer =
     @mailBox[seqno][type] = data
 
   parseAttrs: ( attrs ) ->
-    console.log 'parseAttrs'
     res =
       part: false
       info: {}
@@ -163,7 +166,6 @@ module.exports = AtomMailer =
     return res
 
   prepareMessages: ->
-    console.log 'prepareMessages'
     Base64 = require('js-base64').Base64
     for key of @mailBox
       attrs = @parseAttrs(@mailBox[key].attrs)
@@ -177,20 +179,21 @@ module.exports = AtomMailer =
       bodyArr = @ignoreContentInfo rawBody
       for attrKey of attrs.info
         bodyData = bodyArr[attrKey - 1]
+
         switch attrs.info[attrKey].encoding
-          when 'BASE64'
-            bodyData = Base64.decode(bodyData)
-          when 'QUOTED-PRINTABLE'
+          when 'base64', 'BASE64'
+            bodyData = Base64.decode(bodyData.replace('MIME-Version: 1.0', ''))
+            
+          when 'quoted-printable', 'QUOTED-PRINTABLE'
             bodyData = mimelib.decodeQuotedPrintable(bodyData)
 
         switch attrs.info[attrKey].charset
-          when 'ISO-2022-JP'
+          when 'iso-2022-jp', 'ISO-2022-JP'
             bodyData = @jis2utf(bodyData)
 
         @mailBox[key].body.push bodyData
 
   ignoreContentInfo: (data) ->
-    console.log('ignoreContentInfo')
     if typeof data is 'string'
       return [data]
     newArr = []
